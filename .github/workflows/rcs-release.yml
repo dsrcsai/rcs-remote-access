@@ -1,0 +1,16 @@
+name: RCS Release
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v*-rcs*'
+
+jobs:
+  build:
+    uses: ./.github/workflows/flutter-build.yml
+    secrets: inherit
+    with:
+      upload-artifact: true
+      upload-tag: ${{ github.ref_type == 'tag' && github.ref_name || 'rcs-latest' }}
+      publish-update-metadata: false

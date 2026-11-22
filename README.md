@@ -1,3 +1,12 @@
+# RCS Remote Access
+
+Remote support app from Reality Computer Services (https://realitycs.co.uk), built from [RustDesk](https://github.com/rustdesk/rustdesk) 1.5.3.
+Uses its own relay at remote.realitycs.co.uk. Licensed AGPL-3.0 like RustDesk; this repo is the full modified source.
+
+Downloads: see Releases.
+
+---
+
 <p align="center">
   <img src="res/logo-header.svg" alt="RustDesk - Your remote desktop"><br>
   <a href="#raw-steps-to-build">Build</a> •
