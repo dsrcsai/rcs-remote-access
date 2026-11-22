@@ -233,6 +233,11 @@ const String kOptionKeepScreenOn = "keep-screen-on";
 // running after disconnect.
 const String kOptionStopServiceOnLastClient = "stop-service-on-last-client";
 
+// RCS: on connect, resize the session window to match the remote device's
+// aspect ratio (tall for a phone, wide for a TV). Local option, default ON
+// (unset or 'Y'); 'N' leaves the window size alone.
+const String kOptionFitWindowToRemote = "fit-window-to-remote";
+
 const String kOptionKeepAwakeDuringIncomingSessions = "keep-awake-during-incoming-sessions";
 const String kOptionKeepAwakeDuringOutgoingSessions = "keep-awake-during-outgoing-sessions";
 

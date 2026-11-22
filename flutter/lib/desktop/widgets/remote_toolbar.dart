@@ -1740,6 +1740,8 @@ class _DisplayMenuState extends State<_DisplayMenu> {
   FFI get ffi => widget.ffi;
   String get id => widget.id;
 
+  bool _autoFitDone = false;
+
   @override
   void initState() {
     super.initState();
@@ -1750,6 +1752,34 @@ class _DisplayMenuState extends State<_DisplayMenu> {
         if (_customPercent.value != v) {
           _customPercent.value = v;
         }
+      } catch (_) {}
+    });
+    // RCS: once the remote resolution is known, shape the window to match the
+    // remote device (tall phone, wide TV). One-shot, default on, same safety
+    // guards as the manual "Adjust window" action.
+    ffiModel.addListener(_maybeFitWindowToRemote);
+    _maybeFitWindowToRemote();
+  }
+
+  @override
+  void dispose() {
+    ffiModel.removeListener(_maybeFitWindowToRemote);
+    super.dispose();
+  }
+
+  void _maybeFitWindowToRemote() {
+    if (_autoFitDone) return;
+    if (ffiModel.rect == null) return; // wait for the remote resolution
+    _autoFitDone = true;
+    ffiModel.removeListener(_maybeFitWindowToRemote);
+    if (ffi.connType != ConnType.defaultConn) return; // real remote desktop only
+    if (bind.mainGetLocalOption(key: kOptionFitWindowToRemote) == 'N') return;
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      try {
+        if (!await _screenAdjustor.isWindowCanBeAdjusted()) return;
+        if (_screenAdjustor.isFullscreen) return;
+        if ((await _screenAdjustor.isWindowMaximized()) == true) return;
+        await _screenAdjustor.doAdjustWindow();
       } catch (_) {}
     });
   }
