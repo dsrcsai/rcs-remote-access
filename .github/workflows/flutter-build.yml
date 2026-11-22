@@ -560,6 +560,9 @@ jobs:
           path: ./SignOutput/rustdesk-${{ env.VERSION }}-${{ matrix.job.arch }}.msi
           if-no-files-found: error
 
+      - name: RCS rename downloads
+        shell: bash
+        run: for f in ./SignOutput/rustdesk-*; do mv "$f" "${f/rustdesk-/rcs-remote-access-}"; done
       - name: Publish Release
         uses: softprops/action-gh-release@de2c0eb89ae2a093876385947365aca7b0e5f844 # v1
         if: env.UPLOAD_ARTIFACT == 'true' && env.PUBLISH_UPDATE_METADATA != 'true'
@@ -567,8 +570,8 @@ jobs:
           prerelease: true
           tag_name: ${{ env.TAG_NAME }}
           files: |
-            ./SignOutput/rustdesk-*.msi
-            ./SignOutput/rustdesk-*.exe
+            ./SignOutput/rcs-remote-access-*.msi
+            ./SignOutput/rcs-remote-access-*.exe
 
   # The fallback for the flutter version, we use Sciter for 32bit Windows.
   build-for-windows-sciter:
@@ -1186,6 +1189,8 @@ jobs:
           path: ./rustdesk-${{ env.VERSION }}-${{ matrix.job.arch }}.dmg
           if-no-files-found: error
 
+      - name: RCS rename downloads
+        run: for f in rustdesk*-${{ matrix.job.arch }}.dmg; do mv "$f" "${f/rustdesk/rcs-remote-access}"; done
       - name: Publish DMG package
         if: env.UPLOAD_ARTIFACT == 'true' && env.PUBLISH_UPDATE_METADATA != 'true'
         uses: softprops/action-gh-release@de2c0eb89ae2a093876385947365aca7b0e5f844 # v1
@@ -1193,7 +1198,7 @@ jobs:
           prerelease: true
           tag_name: ${{ env.TAG_NAME }}
           files: |
-            rustdesk*-${{ matrix.job.arch }}.dmg
+            rcs-remote-access*-${{ matrix.job.arch }}.dmg
 
   publish-signed-update-metadata:
     if: false  # RCS: not built
@@ -1691,6 +1696,9 @@ jobs:
           name: rustdesk-${{ env.VERSION }}-${{ matrix.job.arch }}.apk
           path: ${{steps.sign-rustdesk.outputs.signedReleaseFile}}
 
+      - name: RCS rename signed apk
+        if: env.ANDROID_SIGNING_KEY != null && env.UPLOAD_ARTIFACT == 'true'
+        run: cp "${{steps.sign-rustdesk.outputs.signedReleaseFile}}" "rcs-remote-access-${{ env.VERSION }}-${{ matrix.job.arch }}.apk"
       - name: Publish signed apk package
         if: env.ANDROID_SIGNING_KEY != null && env.UPLOAD_ARTIFACT == 'true'
         uses: softprops/action-gh-release@de2c0eb89ae2a093876385947365aca7b0e5f844 # v1
@@ -1698,7 +1706,7 @@ jobs:
           prerelease: true
           tag_name: ${{ env.TAG_NAME }}
           files: |
-            ${{steps.sign-rustdesk.outputs.signedReleaseFile}}
+            rcs-remote-access-${{ env.VERSION }}-${{ matrix.job.arch }}.apk
 
       - name: Publish unsigned apk package
         if: env.ANDROID_SIGNING_KEY == null && env.UPLOAD_ARTIFACT == 'true'
@@ -1876,6 +1884,9 @@ jobs:
           name: rustdesk-${{ env.VERSION }}-${{ matrix.job.arch }}.apk
           path: ${{steps.sign-rustdesk.outputs.signedReleaseFile}}
 
+      - name: RCS rename signed apk
+        if: env.ANDROID_SIGNING_KEY != null && env.UPLOAD_ARTIFACT == 'true'
+        run: cp "${{steps.sign-rustdesk.outputs.signedReleaseFile}}" "rcs-remote-access-${{ env.VERSION }}-${{ matrix.job.arch }}.apk"
       - name: Publish signed apk package
         if: env.ANDROID_SIGNING_KEY != null && env.UPLOAD_ARTIFACT == 'true'
         uses: softprops/action-gh-release@de2c0eb89ae2a093876385947365aca7b0e5f844 # v1
@@ -1883,7 +1894,7 @@ jobs:
           prerelease: true
           tag_name: ${{ env.TAG_NAME }}
           files: |
-            ${{steps.sign-rustdesk.outputs.signedReleaseFile}}
+            rcs-remote-access-${{ env.VERSION }}-${{ matrix.job.arch }}.apk
 
       - name: Publish unsigned apk package
         if: env.ANDROID_SIGNING_KEY == null && env.UPLOAD_ARTIFACT == 'true'
