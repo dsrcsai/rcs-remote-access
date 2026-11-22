@@ -481,13 +481,21 @@ jobs:
         # is x64 / ARM64; the produced Package.msi is globbed since its bin/<platform>/ dir varies.
         if: env.UPLOAD_ARTIFACT == 'true'
         run: |
+          # RCS: build the MSI against a copy of the dist whose app exe is named to
+          # match the app name, so the installer puts RCSRemoteAccess.exe in place and
+          # its shortcuts point at it. The original ./rustdesk is left untouched for the
+          # template step, which still expects rustdesk.exe.
+          Copy-Item -Recurse ./rustdesk ./rustdesk-rcs
+          Move-Item ./rustdesk-rcs/rustdesk.exe ./rustdesk-rcs/RCSRemoteAccess.exe
           pushd ./res/msi
-          python preprocess.py --arp -d ../../rustdesk
+          python preprocess.py --arp -d ../../rustdesk-rcs --app-name RCSRemoteAccess --manufacturer "Reality Computer Services"
           nuget restore msi.sln
           $msiPlatform = if ('${{ matrix.job.arch }}' -eq 'aarch64') { 'ARM64' } else { 'x64' }
           msbuild msi.sln -p:Configuration=Release -p:Platform=$msiPlatform /p:TargetVersion=Windows10
           $msi = Get-ChildItem ./Package/bin/*/Release/en-us/Package.msi | Select-Object -First 1
           mv $msi.FullName ../../SignOutput/rustdesk-${{ env.VERSION }}-${{ matrix.job.arch }}.msi
+          popd
+          Remove-Item -Recurse -Force ./rustdesk-rcs
           sha256sum ../../SignOutput/rustdesk-*.msi
 
       - name: Build pre-built MSI template

@@ -1207,8 +1207,9 @@ void showThemeSettings(OverlayDialogManager dialogManager) async {
 void showAbout(OverlayDialogManager dialogManager) {
   dialogManager.show((setState, close, context) {
     return CustomAlertDialog(
-      title: Text(translate('About RustDesk')),
+      title: Text(translate('About RCS Remote Access')),
       content: Wrap(direction: Axis.vertical, spacing: 12, children: [
+        loadLogo(),
         Text('Version: $version'),
         InkWell(
             onTap: () async {
