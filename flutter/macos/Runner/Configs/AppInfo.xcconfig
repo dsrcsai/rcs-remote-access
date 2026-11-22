@@ -11,4 +11,4 @@ PRODUCT_NAME = RCSRemoteAccess
 PRODUCT_BUNDLE_IDENTIFIER = uk.co.realitycs.remoteaccess
 
 // The copyright displayed in application information
-PRODUCT_COPYRIGHT = Copyright © 2026 Purslane Tech Pte. Ltd. All rights reserved.
+PRODUCT_COPYRIGHT = Copyright © 2026 Reality Computer Services. All rights reserved.

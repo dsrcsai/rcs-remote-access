@@ -1232,6 +1232,19 @@ pub fn is_rustdesk() -> bool {
     hbb_common::config::APP_NAME.read().unwrap().eq("RustDesk")
 }
 
+// RCS: user-facing product name. APP_NAME stays "RCSRemoteAccess" (no spaces)
+// because it drives config paths, the service name and the install folder; this
+// spaced form is for display only (window titles, about).
+#[inline]
+pub fn get_app_display_name() -> String {
+    let name = get_app_name();
+    if name == "RCSRemoteAccess" {
+        "RCS Remote Access".to_owned()
+    } else {
+        name
+    }
+}
+
 #[inline]
 pub fn get_uri_prefix() -> String {
     format!("{}://", get_app_name().to_lowercase())

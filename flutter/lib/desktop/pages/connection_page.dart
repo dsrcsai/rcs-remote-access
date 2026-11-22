@@ -80,9 +80,9 @@ class _OnlineStatusWidgetState extends State<OnlineStatusWidget> {
 
     setupServerWidget() => Flexible(
           child: Offstage(
-            offstage: !(!_svcStopped.value &&
-                stateGlobal.svcStatus.value == SvcStatus.ready &&
-                _svcIsUsingPublicServer.value),
+            // RCS: we always ship our own relay (remote.realitycs.co.uk), so the
+            // baked default is not a "public" server to be replaced. Never prompt.
+            offstage: true,
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [

@@ -3060,8 +3060,16 @@ int versionCmp(String v1, String v2) {
   return bind.versionToNumber(v: v1) - bind.versionToNumber(v: v2);
 }
 
-String getWindowName({WindowType? overrideType}) {
+// RCS: user-facing product name. The internal APP_NAME stays "RCSRemoteAccess"
+// (no spaces) because it drives config paths, the service name and the install
+// folder; this spaced form is for display only (titles, about).
+String getAppDisplayName() {
   final name = bind.mainGetAppNameSync();
+  return name == 'RCSRemoteAccess' ? 'RCS Remote Access' : name;
+}
+
+String getWindowName({WindowType? overrideType}) {
+  final name = getAppDisplayName();
   switch (overrideType ?? kWindowType) {
     case WindowType.Main:
       return name;
