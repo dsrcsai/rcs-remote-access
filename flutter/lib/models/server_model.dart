@@ -723,6 +723,14 @@ class ServerModel with ChangeNotifier {
       if (desktopType == DesktopType.cm && _clients.isEmpty) {
         hideCmWindow();
       }
+      // RCS: on Android, stop screen sharing once the last client disconnects
+      // (default on; a Settings toggle can keep it running).
+      if (isAndroid &&
+          _isStart &&
+          _clients.isEmpty &&
+          bind.mainGetLocalOption(key: kOptionStopServiceOnLastClient) != 'N') {
+        stopService();
+      }
       if (isAndroid) androidUpdatekeepScreenOn();
       notifyListeners();
     } catch (e) {

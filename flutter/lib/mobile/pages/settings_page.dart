@@ -77,6 +77,7 @@ class _SettingsState extends State<SettingsPage> with WidgetsBindingObserver {
   var _showTerminalExtraKeys = false;
   var _floatingWindowDisabled = false;
   var _keepScreenOn = KeepScreenOn.duringControlled; // relay on floating window
+  var _stopServiceOnLastClient = true; // RCS: default on
   var _enableAbr = false;
   var _denyLANDiscovery = false;
   var _onlyWhiteList = false;
@@ -212,6 +213,13 @@ class _SettingsState extends State<SettingsPage> with WidgetsBindingObserver {
       if (keepScreenOn != _keepScreenOn) {
         update = true;
         _keepScreenOn = keepScreenOn;
+      }
+
+      final stopServiceOnLastClient =
+          bind.mainGetLocalOption(key: kOptionStopServiceOnLastClient) != 'N';
+      if (stopServiceOnLastClient != _stopServiceOnLastClient) {
+        update = true;
+        _stopServiceOnLastClient = stopServiceOnLastClient;
       }
 
       final fingerprint = await bind.mainGetFingerprint();
@@ -729,6 +737,20 @@ class _SettingsState extends State<SettingsPage> with WidgetsBindingObserver {
               gFFI.serverModel.androidUpdatekeepScreenOn();
             },
     ));
+
+    // RCS: auto-stop screen sharing when the last remote client disconnects.
+    enhancementsTiles.add(SettingsTile.switchTile(
+        initialValue: _stopServiceOnLastClient,
+        title: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(translate('Stop sharing when disconnected')),
+          Text('* ${translate('stop_service_on_last_client_tip')}',
+              style: Theme.of(context).textTheme.bodySmall),
+        ]),
+        onToggle: (toValue) async {
+          await bind.mainSetLocalOption(
+              key: kOptionStopServiceOnLastClient, value: toValue ? 'Y' : 'N');
+          setState(() => _stopServiceOnLastClient = toValue);
+        }));
 
     final disabledSettings = bind.isDisableSettings();
     final hideSecuritySettings =

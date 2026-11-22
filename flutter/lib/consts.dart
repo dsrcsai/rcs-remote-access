@@ -228,6 +228,11 @@ const String kOptionDisableFloatingWindow = "disable-floating-window";
 
 const String kOptionKeepScreenOn = "keep-screen-on";
 
+// RCS: when the last remote client disconnects, stop the Android screen-sharing
+// service automatically. Local option, default ON (unset or 'Y'); 'N' keeps it
+// running after disconnect.
+const String kOptionStopServiceOnLastClient = "stop-service-on-last-client";
+
 const String kOptionKeepAwakeDuringIncomingSessions = "keep-awake-during-incoming-sessions";
 const String kOptionKeepAwakeDuringOutgoingSessions = "keep-awake-during-outgoing-sessions";
 

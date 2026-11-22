@@ -46,6 +46,8 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
         ("Local Address", "Local address"),
         ("Change Local Port", "Change local port"),
         ("setup_server_tip", "For faster connection, please set up your own server"),
+        ("Stop sharing when disconnected", "Stop sharing when disconnected"),
+        ("stop_service_on_last_client_tip", "When the last remote device disconnects, screen sharing stops automatically."),
         ("Enter Remote ID", "Enter remote ID"),
         ("Auto Login", "Auto Login (Only valid if you set \"Lock after session end\")"),
         ("Change Path", "Change path"),
