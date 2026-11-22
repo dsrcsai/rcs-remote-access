@@ -6,6 +6,10 @@ on:
     tags:
       - 'v*-rcs*'
 
+permissions:
+  contents: write
+  actions: write
+
 jobs:
   build:
     uses: ./.github/workflows/flutter-build.yml
