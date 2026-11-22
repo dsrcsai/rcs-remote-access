@@ -1698,7 +1698,7 @@ jobs:
 
       - name: RCS rename signed apk
         if: env.ANDROID_SIGNING_KEY != null && env.UPLOAD_ARTIFACT == 'true'
-        run: cp "${{steps.sign-rustdesk.outputs.signedReleaseFile}}" "rcs-remote-access-${{ env.VERSION }}-${{ matrix.job.arch }}.apk"
+        run: cp "${{steps.sign-rustdesk.outputs.signedReleaseFile}}" "$(basename "${{steps.sign-rustdesk.outputs.signedReleaseFile}}" | sed -E 's/^rustdesk-/rcs-remote-access-/; s/-signed//')"
       - name: Publish signed apk package
         if: env.ANDROID_SIGNING_KEY != null && env.UPLOAD_ARTIFACT == 'true'
         uses: softprops/action-gh-release@de2c0eb89ae2a093876385947365aca7b0e5f844 # v1
@@ -1706,7 +1706,7 @@ jobs:
           prerelease: true
           tag_name: ${{ env.TAG_NAME }}
           files: |
-            rcs-remote-access-${{ env.VERSION }}-${{ matrix.job.arch }}.apk
+            rcs-remote-access-${{ env.VERSION }}-*.apk
 
       - name: Publish unsigned apk package
         if: env.ANDROID_SIGNING_KEY == null && env.UPLOAD_ARTIFACT == 'true'
@@ -1886,7 +1886,7 @@ jobs:
 
       - name: RCS rename signed apk
         if: env.ANDROID_SIGNING_KEY != null && env.UPLOAD_ARTIFACT == 'true'
-        run: cp "${{steps.sign-rustdesk.outputs.signedReleaseFile}}" "rcs-remote-access-${{ env.VERSION }}-${{ matrix.job.arch }}.apk"
+        run: cp "${{steps.sign-rustdesk.outputs.signedReleaseFile}}" "$(basename "${{steps.sign-rustdesk.outputs.signedReleaseFile}}" | sed -E 's/^rustdesk-/rcs-remote-access-/; s/-signed//')"
       - name: Publish signed apk package
         if: env.ANDROID_SIGNING_KEY != null && env.UPLOAD_ARTIFACT == 'true'
         uses: softprops/action-gh-release@de2c0eb89ae2a093876385947365aca7b0e5f844 # v1
@@ -1894,7 +1894,7 @@ jobs:
           prerelease: true
           tag_name: ${{ env.TAG_NAME }}
           files: |
-            rcs-remote-access-${{ env.VERSION }}-${{ matrix.job.arch }}.apk
+            rcs-remote-access-${{ env.VERSION }}-*.apk
 
       - name: Publish unsigned apk package
         if: env.ANDROID_SIGNING_KEY == null && env.UPLOAD_ARTIFACT == 'true'
