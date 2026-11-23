@@ -1723,14 +1723,22 @@ class ScreenAdjustor {
     final mediaSize = MediaQueryData.fromView(view).size;
     final dw = ffi.canvasModel.getDisplayWidth().toDouble();
     final dh = ffi.canvasModel.getDisplayHeight().toDouble();
-    if (dw <= 0 || dh <= 0) return;
+    if (dw <= 0 || dh <= 0) {
+      debugPrint('RCS-FIT: bad display size ${dw}x$dh');
+      return;
+    }
     final aspect = dw / dh;
     await updateScreen();
     final screen = _screen;
-    if (screen == null) return;
+    if (screen == null) {
+      debugPrint('RCS-FIT: no screen');
+      return;
+    }
     final scale = isWindows ? screen.scaleFactor : 1.0;
     final availW = screen.visibleFrame.width / scale;
     final availH = screen.visibleFrame.height / scale;
+    debugPrint('RCS-FIT: display=${dw}x$dh aspect=${aspect.toStringAsFixed(3)} '
+        'scale=$scale avail=${availW.toStringAsFixed(0)}x${availH.toStringAsFixed(0)}');
     if (availW <= 0 || availH <= 0) return;
     final wc = WindowController.fromWindowId(windowId);
     // Try the largest fit first; fall back smaller if chrome pushes it past
@@ -1744,14 +1752,20 @@ class ScreenAdjustor {
       }
       final frame = await _getAdjustedWindowFrame(mediaSize,
           contentWidth: cw, contentHeight: ch);
+      debugPrint('RCS-FIT: f=$f content=${cw.toStringAsFixed(0)}x'
+          '${ch.toStringAsFixed(0)} frame=$frame');
       if (frame != null) {
         try {
           await wc.setFrame(frame);
           stateGlobal.setMaximized(false);
-        } catch (_) {}
+          debugPrint('RCS-FIT: setFrame ok $frame');
+        } catch (e) {
+          debugPrint('RCS-FIT: setFrame failed: $e');
+        }
         return;
       }
     }
+    debugPrint('RCS-FIT: no fitting frame found (all fractions rejected)');
   }
 }
 
@@ -1822,12 +1836,34 @@ class _DisplayMenuState extends State<_DisplayMenu> {
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       try {
         // Let the first frame and canvas settle before measuring.
-        await Future.delayed(const Duration(milliseconds: 300));
-        if (RemoteCountState.find().value != 1) return; // single session only
-        if (_screenAdjustor.isFullscreen) return;
-        if ((await _screenAdjustor.isWindowMaximized()) == true) return;
+        await Future.delayed(const Duration(milliseconds: 500));
+        debugPrint('RCS-FIT: start, remoteCount=${RemoteCountState.find().value}, '
+            'fullscreen=${_screenAdjustor.isFullscreen}, rect=${ffiModel.rect}');
+        if (RemoteCountState.find().value != 1) {
+          debugPrint('RCS-FIT: abort, not single session');
+          return;
+        }
+        if (_screenAdjustor.isFullscreen) {
+          debugPrint('RCS-FIT: abort, fullscreen');
+          return;
+        }
+        // A session often opens maximized; un-maximize first so setFrame works,
+        // instead of skipping the fit entirely.
+        if ((await _screenAdjustor.isWindowMaximized()) == true) {
+          debugPrint('RCS-FIT: window maximized, un-maximizing');
+          try {
+            await WindowController.fromWindowId(stateGlobal.windowId)
+                .unmaximize();
+            stateGlobal.setMaximized(false);
+            await Future.delayed(const Duration(milliseconds: 300));
+          } catch (e) {
+            debugPrint('RCS-FIT: unmaximize failed: $e');
+          }
+        }
         await _screenAdjustor.fitWindowToRemoteAspect();
-      } catch (_) {}
+      } catch (e) {
+        debugPrint('RCS-FIT: exception $e');
+      }
     });
   }
 
