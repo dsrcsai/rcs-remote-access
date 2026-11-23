@@ -318,6 +318,16 @@ def gen_custom_dialog_bitmaps():
             "WixUINewIco",
             "WixUIUpIco",
         ]
+        # RCS: our branded wizard bitmaps live in the tracked res/msi/branding dir
+        # (Package/Resources is gitignored and only populated at build time). Copy
+        # any that exist into Package/Resources so the exists-check below wires them.
+        for var in vars:
+            src = Path(f"branding/{var}.bmp")
+            if src.exists():
+                dst = Path(f"Package/Resources/{var}.bmp")
+                dst.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy(src, dst)
+
         to_insert_lines = []
         for var in vars:
             if Path(f"Package/Resources/{var}.bmp").exists():

@@ -1740,6 +1740,15 @@ class ScreenAdjustor {
     debugPrint('RCS-FIT: display=${dw}x$dh aspect=${aspect.toStringAsFixed(3)} '
         'scale=$scale avail=${availW.toStringAsFixed(0)}x${availH.toStringAsFixed(0)}');
     if (availW <= 0 || availH <= 0) return;
+    // RCS: force adaptive view so the remote scales to fit the window. Without
+    // this a session left in 'original' keeps the remote at 1:1, so a phone
+    // (e.g. 1080x2340) is bigger than the window and the user pans it around.
+    try {
+      await bind.sessionSetViewStyle(
+          sessionId: ffi.sessionId, value: kRemoteViewStyleAdaptive);
+    } catch (e) {
+      debugPrint('RCS-FIT: set adaptive failed: $e');
+    }
     final wc = WindowController.fromWindowId(windowId);
     // Try the largest fit first; fall back smaller if chrome pushes it past
     // the screen (the frame calc rejects targets that exceed the work area).
@@ -1759,6 +1768,10 @@ class ScreenAdjustor {
           await wc.setFrame(frame);
           stateGlobal.setMaximized(false);
           debugPrint('RCS-FIT: setFrame ok $frame');
+          // RCS: recompute the adaptive scale against the new window size so the
+          // whole remote fits immediately (no manual resize needed).
+          await Future.delayed(const Duration(milliseconds: 150));
+          await ffi.canvasModel.updateViewStyle();
         } catch (e) {
           debugPrint('RCS-FIT: setFrame failed: $e');
         }
