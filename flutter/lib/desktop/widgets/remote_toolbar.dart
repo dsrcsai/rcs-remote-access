@@ -1496,7 +1496,9 @@ class ScreenAdjustor {
   }
 
   Future<Rect?> _getAdjustedWindowFrame(Size mediaSize,
-      {bool forMenu = false}) async {
+      {bool forMenu = false,
+      double? contentWidth,
+      double? contentHeight}) async {
     final screen = _screen;
     if (screen != null) {
       // Windows window frames use physical pixels while Flutter view sizes are
@@ -1551,14 +1553,14 @@ class ScreenAdjustor {
         horizontalEdges = CanvasModel.leftToEdge + CanvasModel.rightToEdge;
         verticalEdges = CanvasModel.topToEdge + CanvasModel.bottomToEdge;
       }
-      final width = (canvasModel.getDisplayWidth() * canvasModel.scale +
-                  horizontalEdges) *
-              scale +
-          magicWidth;
-      final height =
-          (canvasModel.getDisplayHeight() * canvasModel.scale + verticalEdges) *
-                  scale +
-              magicHeight;
+      // RCS: contentWidth/Height override lets the aspect-fit path size the
+      // window to the remote aspect ratio instead of 1:1 remote pixels.
+      final contentW =
+          contentWidth ?? canvasModel.getDisplayWidth() * canvasModel.scale;
+      final contentH =
+          contentHeight ?? canvasModel.getDisplayHeight() * canvasModel.scale;
+      final width = (contentW + horizontalEdges) * scale + magicWidth;
+      final height = (contentH + verticalEdges) * scale + magicHeight;
       double left = wndRect.left + (wndRect.width - width) / 2;
       double top = wndRect.top + (wndRect.height - height) / 2;
 
@@ -1708,6 +1710,49 @@ class ScreenAdjustor {
     }
     return await _getAdjustedWindowFrame(mediaSize, forMenu: true) != null;
   }
+
+  // RCS: resize the window to the remote device's aspect ratio (tall phone,
+  // wide TV) and fit it within the screen, so adaptive view fills the window
+  // without large black bars. Unlike doAdjustWindow this works with any view
+  // style because it targets the aspect, not 1:1 remote pixels.
+  Future<void> fitWindowToRemoteAspect([BuildContext? context]) async {
+    if (isWeb) return;
+    final views = WidgetsBinding.instance.platformDispatcher.views;
+    if (context == null && views.isEmpty) return;
+    final view = context != null ? View.of(context) : views.first;
+    final mediaSize = MediaQueryData.fromView(view).size;
+    final dw = ffi.canvasModel.getDisplayWidth().toDouble();
+    final dh = ffi.canvasModel.getDisplayHeight().toDouble();
+    if (dw <= 0 || dh <= 0) return;
+    final aspect = dw / dh;
+    await updateScreen();
+    final screen = _screen;
+    if (screen == null) return;
+    final scale = isWindows ? screen.scaleFactor : 1.0;
+    final availW = screen.visibleFrame.width / scale;
+    final availH = screen.visibleFrame.height / scale;
+    if (availW <= 0 || availH <= 0) return;
+    final wc = WindowController.fromWindowId(windowId);
+    // Try the largest fit first; fall back smaller if chrome pushes it past
+    // the screen (the frame calc rejects targets that exceed the work area).
+    for (final f in [0.92, 0.85, 0.75, 0.65, 0.5]) {
+      double ch = availH * f;
+      double cw = ch * aspect;
+      if (cw > availW * f) {
+        cw = availW * f;
+        ch = cw / aspect;
+      }
+      final frame = await _getAdjustedWindowFrame(mediaSize,
+          contentWidth: cw, contentHeight: ch);
+      if (frame != null) {
+        try {
+          await wc.setFrame(frame);
+          stateGlobal.setMaximized(false);
+        } catch (_) {}
+        return;
+      }
+    }
+  }
 }
 
 class _DisplayMenu extends StatefulWidget {
@@ -1776,10 +1821,12 @@ class _DisplayMenuState extends State<_DisplayMenu> {
     if (bind.mainGetLocalOption(key: kOptionFitWindowToRemote) == 'N') return;
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       try {
-        if (!await _screenAdjustor.isWindowCanBeAdjusted()) return;
+        // Let the first frame and canvas settle before measuring.
+        await Future.delayed(const Duration(milliseconds: 300));
+        if (RemoteCountState.find().value != 1) return; // single session only
         if (_screenAdjustor.isFullscreen) return;
         if ((await _screenAdjustor.isWindowMaximized()) == true) return;
-        await _screenAdjustor.doAdjustWindow();
+        await _screenAdjustor.fitWindowToRemoteAspect();
       } catch (_) {}
     });
   }
