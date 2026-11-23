@@ -37,7 +37,9 @@
 		</StandardDirectory>
 
 		<StandardDirectory Id="ProgramMenuFolder">
-			<Directory Id="App.StartMenu" Name="$(var.Product)" />
+			<!-- RCS: Start Menu folder shows the display name; shortcuts inside use the
+			     SC_* labels ("RCS Remote Access"). Install folder/exe stay var.Product. -->
+			<Directory Id="App.StartMenu" Name="RCS Remote Access" />
 		</StandardDirectory>
 
 		<StandardDirectory Id="DesktopFolder" />
