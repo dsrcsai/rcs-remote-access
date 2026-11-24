@@ -130,6 +130,9 @@ class _RemotePageState extends State<RemotePage>
   Function(bool)? _onEnterOrLeaveImage4Toolbar;
 
   late FFI _ffi;
+  // RCS: used to shape the window to the remote's aspect on connect, from the
+  // first-image callback, so it does not depend on the toolbar being opened.
+  ScreenAdjustor? _autoFitAdjustor;
   Worker? _waylandKeyboardModeWorker;
   bool _waylandKeyboardModeNormalized = false;
   bool _waylandKeyboardModeNormalizing = false;
@@ -177,6 +180,15 @@ class _RemotePageState extends State<RemotePage>
             toolbarState: widget.toolbarState);
         registerToolbarShortcuts(context, widget.id, _ffi);
       }
+      // RCS: fit the window to the remote aspect (tall phone, wide TV) as soon
+      // as the first image arrives, so the whole remote is visible without the
+      // user opening the toolbar first. Guards live in autoFitOnConnect.
+      _autoFitAdjustor ??= ScreenAdjustor(
+        id: widget.id,
+        ffi: _ffi,
+        cbExitFullscreen: () {},
+      );
+      _autoFitAdjustor!.autoFitOnConnect();
     });
     _ffi.canvasModel.initializeEdgeScrollFallback(this);
     _ffi.start(

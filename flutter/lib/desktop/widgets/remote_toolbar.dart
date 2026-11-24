@@ -1386,6 +1386,53 @@ class ScreenAdjustor {
     }
   }
 
+  // RCS: one-shot auto-fit, same guards as the Display menu's version, but
+  // callable from anywhere. The remote page calls it from its first-image
+  // callback so the window shapes to the remote (tall phone, wide TV) on
+  // connect, without the user having to open the toolbar first. Earlier the
+  // only trigger lived in the Display menu's initState, which does not mount
+  // until the toolbar is shown, so the fit only ran after "show toolbar".
+  bool _autoFitDone = false;
+  Future<void> autoFitOnConnect() async {
+    if (_autoFitDone) return;
+    if (isWeb) return;
+    if (ffi.connType != ConnType.defaultConn) return;
+    if (bind.mainGetLocalOption(key: kOptionFitWindowToRemote) == 'N') return;
+    if (ffi.ffiModel.rect == null) return; // wait until resolution is known
+    _autoFitDone = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      try {
+        // Let the first frame and canvas settle before measuring.
+        await Future.delayed(const Duration(milliseconds: 500));
+        debugPrint('RCS-FIT: autoFitOnConnect start, '
+            'remoteCount=${RemoteCountState.find().value}, '
+            'fullscreen=$isFullscreen, rect=${ffi.ffiModel.rect}');
+        if (RemoteCountState.find().value != 1) {
+          debugPrint('RCS-FIT: abort, not single session');
+          return;
+        }
+        if (isFullscreen) {
+          debugPrint('RCS-FIT: abort, fullscreen');
+          return;
+        }
+        if ((await isWindowMaximized()) == true) {
+          debugPrint('RCS-FIT: window maximized, un-maximizing');
+          try {
+            await WindowController.fromWindowId(windowId).unmaximize();
+            stateGlobal.setMaximized(false);
+            await Future.delayed(const Duration(milliseconds: 300));
+          } catch (e) {
+            debugPrint('RCS-FIT: unmaximize failed: $e');
+          }
+        }
+        await fitWindowToRemoteAspect();
+        debugPrint('RCS-FIT: autoFitOnConnect done');
+      } catch (e) {
+        debugPrint('RCS-FIT: autoFitOnConnect exception $e');
+      }
+    });
+  }
+
   adjustWindow(BuildContext context) {
     return futureBuilder(
         future: isWindowCanBeAdjusted(context),
@@ -1812,8 +1859,6 @@ class _DisplayMenuState extends State<_DisplayMenu> {
   FFI get ffi => widget.ffi;
   String get id => widget.id;
 
-  bool _autoFitDone = false;
-
   @override
   void initState() {
     super.initState();
@@ -1826,58 +1871,15 @@ class _DisplayMenuState extends State<_DisplayMenu> {
         }
       } catch (_) {}
     });
-    // RCS: once the remote resolution is known, shape the window to match the
-    // remote device (tall phone, wide TV). One-shot, default on, same safety
-    // guards as the manual "Adjust window" action.
-    ffiModel.addListener(_maybeFitWindowToRemote);
-    _maybeFitWindowToRemote();
+    // RCS: auto-fit the window to the remote aspect now runs from the remote
+    // page's first-image callback (ScreenAdjustor.autoFitOnConnect), so it no
+    // longer depends on this Display menu being mounted (i.e. the toolbar being
+    // shown). The manual "Adjust Window" menu action below still works.
   }
 
   @override
   void dispose() {
-    ffiModel.removeListener(_maybeFitWindowToRemote);
     super.dispose();
-  }
-
-  void _maybeFitWindowToRemote() {
-    if (_autoFitDone) return;
-    if (ffiModel.rect == null) return; // wait for the remote resolution
-    _autoFitDone = true;
-    ffiModel.removeListener(_maybeFitWindowToRemote);
-    if (ffi.connType != ConnType.defaultConn) return; // real remote desktop only
-    if (bind.mainGetLocalOption(key: kOptionFitWindowToRemote) == 'N') return;
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      try {
-        // Let the first frame and canvas settle before measuring.
-        await Future.delayed(const Duration(milliseconds: 500));
-        debugPrint('RCS-FIT: start, remoteCount=${RemoteCountState.find().value}, '
-            'fullscreen=${_screenAdjustor.isFullscreen}, rect=${ffiModel.rect}');
-        if (RemoteCountState.find().value != 1) {
-          debugPrint('RCS-FIT: abort, not single session');
-          return;
-        }
-        if (_screenAdjustor.isFullscreen) {
-          debugPrint('RCS-FIT: abort, fullscreen');
-          return;
-        }
-        // A session often opens maximized; un-maximize first so setFrame works,
-        // instead of skipping the fit entirely.
-        if ((await _screenAdjustor.isWindowMaximized()) == true) {
-          debugPrint('RCS-FIT: window maximized, un-maximizing');
-          try {
-            await WindowController.fromWindowId(stateGlobal.windowId)
-                .unmaximize();
-            stateGlobal.setMaximized(false);
-            await Future.delayed(const Duration(milliseconds: 300));
-          } catch (e) {
-            debugPrint('RCS-FIT: unmaximize failed: $e');
-          }
-        }
-        await _screenAdjustor.fitWindowToRemoteAspect();
-      } catch (e) {
-        debugPrint('RCS-FIT: exception $e');
-      }
-    });
   }
 
   @override
