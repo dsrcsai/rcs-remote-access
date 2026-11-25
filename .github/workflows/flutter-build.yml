@@ -934,11 +934,12 @@ jobs:
               vcpkg-triplet: x64-osx,
             }
           - {
-              # RCS: macos-15 (arm64) kept failing with "job was not acquired by
-              # Runner of type hosted" (GitHub arm64 capacity). macos-14 is the
-              # stable Apple-Silicon label; still a native arm64 build.
+              # RCS: native arm64 hosted runners are unavailable on this account
+              # (macos-15 = "not acquired"/capacity, macos-14 = "configuration not
+              # supported"). Leaving the label at macos-15 for now; the reliable
+              # fix is to cross-build aarch64 on the Intel runner (macos-15-intel).
               target: aarch64-apple-darwin,
-              os: macos-14,
+              os: macos-15,
               # extra-build-args: "--disable-flutter-texture-render", # disable this for mac, because we see a lot of users reporting flickering both on arm and x64, and we can not confirm if texture rendering has better performance if htere is no vram, https://github.com/rustdesk/rustdesk/issues/6296
               extra-build-args: "--screencapturekit",
               extra-cargo-features: ",screencapturekit",
