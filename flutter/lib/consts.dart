@@ -233,6 +233,13 @@ const String kOptionKeepScreenOn = "keep-screen-on";
 // running after disconnect.
 const String kOptionStopServiceOnLastClient = "stop-service-on-last-client";
 
+// RCS: when the last client disconnects, also turn OFF the accessibility input
+// service so the device is not left armed for remote control while idle. Android
+// will not let the app re-enable its own accessibility service, so the user must
+// re-grant it in Settings before the next session; therefore this is opt-in.
+// Local option, default OFF (unset or any non-'Y'); 'Y' enables it.
+const String kOptionDisableInputOnLastClient = "disable-input-on-last-client";
+
 // RCS: on connect, resize the session window to match the remote device's
 // aspect ratio (tall for a phone, wide for a TV). Local option, default ON
 // (unset or 'Y'); 'N' leaves the window size alone.

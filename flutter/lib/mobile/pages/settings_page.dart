@@ -78,6 +78,7 @@ class _SettingsState extends State<SettingsPage> with WidgetsBindingObserver {
   var _floatingWindowDisabled = false;
   var _keepScreenOn = KeepScreenOn.duringControlled; // relay on floating window
   var _stopServiceOnLastClient = true; // RCS: default on
+  var _disableInputOnLastClient = false; // RCS: default off (opt-in)
   var _enableAbr = false;
   var _denyLANDiscovery = false;
   var _onlyWhiteList = false;
@@ -220,6 +221,13 @@ class _SettingsState extends State<SettingsPage> with WidgetsBindingObserver {
       if (stopServiceOnLastClient != _stopServiceOnLastClient) {
         update = true;
         _stopServiceOnLastClient = stopServiceOnLastClient;
+      }
+
+      final disableInputOnLastClient =
+          bind.mainGetLocalOption(key: kOptionDisableInputOnLastClient) == 'Y';
+      if (disableInputOnLastClient != _disableInputOnLastClient) {
+        update = true;
+        _disableInputOnLastClient = disableInputOnLastClient;
       }
 
       final fingerprint = await bind.mainGetFingerprint();
@@ -750,6 +758,24 @@ class _SettingsState extends State<SettingsPage> with WidgetsBindingObserver {
           await bind.mainSetLocalOption(
               key: kOptionStopServiceOnLastClient, value: toValue ? 'Y' : 'N');
           setState(() => _stopServiceOnLastClient = toValue);
+        }));
+
+    // RCS: opt-in — turn off the accessibility (remote-control) service when the
+    // last client disconnects, so the device is not left armed while idle. Note:
+    // Android will not let the app re-enable it, so it must be re-granted in
+    // Settings before the next session.
+    enhancementsTiles.add(SettingsTile.switchTile(
+        initialValue: _disableInputOnLastClient,
+        title: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(translate('Turn off remote control when disconnected')),
+          Text(
+              '* ${translate('You must re-enable the accessibility service in Android Settings before the next session.')}',
+              style: Theme.of(context).textTheme.bodySmall),
+        ]),
+        onToggle: (toValue) async {
+          await bind.mainSetLocalOption(
+              key: kOptionDisableInputOnLastClient, value: toValue ? 'Y' : 'N');
+          setState(() => _disableInputOnLastClient = toValue);
         }));
 
     final disabledSettings = bind.isDisableSettings();

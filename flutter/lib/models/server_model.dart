@@ -731,6 +731,15 @@ class ServerModel with ChangeNotifier {
           bind.mainGetLocalOption(key: kOptionStopServiceOnLastClient) != 'N') {
         stopService();
       }
+      // RCS: optionally turn off the accessibility input service when the last
+      // client disconnects, so the device is not left armed for remote control
+      // while idle. Opt-in (default off); the user must re-enable the service in
+      // Android Settings before the next session.
+      if (isAndroid &&
+          _clients.isEmpty &&
+          bind.mainGetLocalOption(key: kOptionDisableInputOnLastClient) == 'Y') {
+        parent.target?.invokeMethod("stop_input");
+      }
       if (isAndroid) androidUpdatekeepScreenOn();
       notifyListeners();
     } catch (e) {
